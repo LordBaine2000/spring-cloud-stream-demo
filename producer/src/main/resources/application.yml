@@ -1,0 +1,20 @@
+server:
+  port: 8082
+spring:
+  cloud:
+    stream:
+      bindings:
+        output:
+          destination: time.stream
+          content-type: application/json
+          binder: rabbit
+      binders:
+        rabbit:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: localhost
+                port: 5672
+                username: guest
+                password: guest

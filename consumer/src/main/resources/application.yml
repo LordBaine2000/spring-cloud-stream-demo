@@ -1,0 +1,30 @@
+server:
+  port: 8081
+spring:
+  cloud:
+    stream:
+      bindings:
+        input:
+          destination: time.stream
+          content-type: application/json
+          binder: rabbit
+      binders:
+        rabbit:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: localhost
+                port: 5672
+                username: guest
+                password: guest
+cloud:
+  aws:
+    verified-senders: #https://us-west-2.console.aws.amazon.com/ses/home?region=us-west-2#verified-senders-email
+      to-email: "to@yourdomain.com"
+      from-email: "from@yourdomain.com"
+    credentials: #https://console.aws.amazon.com/iam/home?#security_credential
+      accessKey: YourAwsAccessKey
+      secretKey: YourAwsSecretKey
+    region:
+      static: us-west-2 #com.amazonaws.regions.Regions
