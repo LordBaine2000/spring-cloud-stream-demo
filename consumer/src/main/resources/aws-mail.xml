@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!-- https://github.com/spring-cloud/spring-cloud-aws/issues/55 -->
-<beans xmlns="http://www.springframework.org/schema/beans"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aws-mail="http://www.springframework.org/schema/cloud/aws/mail"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/cloud/aws/mail http://www.springframework.org/schema/cloud/aws/mail/spring-cloud-aws-mail.xsd">
-    <aws-mail:mail-sender id="testSender" />
-</beans>

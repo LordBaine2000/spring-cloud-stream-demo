@@ -1,31 +1,29 @@
 package com.example.consumer;
 
-import javax.mail.internet.MimeMessage;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.aws.context.config.annotation.EnableContextCredentials;
-import org.springframework.cloud.aws.context.config.annotation.EnableContextRegion;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.cloud.stream.messaging.Sink;
 import org.springframework.core.env.Environment;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.mail.javamail.MimeMessagePreparator;
+
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder;
+import com.amazonaws.services.simpleemail.model.Body;
+import com.amazonaws.services.simpleemail.model.Content;
+import com.amazonaws.services.simpleemail.model.Destination;
+import com.amazonaws.services.simpleemail.model.Message;
+import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 
 @SpringBootApplication
 @EnableBinding(Sink.class)
-@EnableContextRegion(region = "${cloud.aws.region.static}")
-@EnableContextCredentials(accessKey = "${cloud.aws.credentials.accessKey}", secretKey = "${cloud.aws.credentials.secretKey}")
 public class ConsumerApplication {
 	private static Logger logger = LoggerFactory.getLogger(ConsumerApplication.class);
 
-	@Autowired
-	private JavaMailSender mailSender;
 	@Autowired
 	private Environment env;
 
@@ -47,17 +45,40 @@ public class ConsumerApplication {
 	}
 
 	private void sendMailMessage(TimeInfo timeInfo) {
-		this.mailSender.send(new MimeMessagePreparator() {
+		System.setProperty("aws.accessKeyId", this.env.getProperty("cloud.aws.credentials.accessKey"));
+		System.setProperty("aws.secretKey", this.env.getProperty("cloud.aws.credentials.secretKey"));
 
-			@Override
-			public void prepare(MimeMessage mimeMessage) throws Exception {
-				MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-				helper.addTo(env.getProperty("cloud.aws.verified-senders.to-email"));
-				helper.setFrom(env.getProperty("cloud.aws.verified-senders.from-email"));
-				helper.setSubject(timeInfo.getLabel());
-				helper.setText(timeInfo.getTime(), false);
-			}
-		});
+		AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
+						.withRegion(Regions.US_WEST_2).build();
+
+		SendEmailRequest request = new SendEmailRequest()
+						.withDestination(
+										new Destination()
+														.withToAddresses(this.env.getProperty("cloud.aws.verified-senders.to-email"))
+						)
+						.withMessage(
+										new Message()
+														.withBody(
+																		new Body()
+																						.withHtml(
+																										new Content()
+																														.withCharset("UTF-8")
+																														.withData(timeInfo.getTime()))
+																						.withText(
+																										new Content()
+																														.withCharset("UTF-8")
+																														.withData(timeInfo.getTime())
+																						)
+														)
+														.withSubject(
+																		new Content()
+																						.withCharset("UTF-8")
+																						.withData(timeInfo.getLabel())
+														)
+						)
+						.withSource(this.env.getProperty("cloud.aws.verified-senders.from-email"));
+
+		client.sendEmail(request);
 	}
 
 	public static class TimeInfo {
